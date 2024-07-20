@@ -140,3 +140,5 @@ gradle-app.setting
 hs_err_pid*
 replay_pid*
 
+# Client Secret Care
+src/main/kotlin/io/github/kuroka3/spoticraft/manager/ConstVariables.kt
