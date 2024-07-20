@@ -1,0 +1,4 @@
+name: 'SpotiCraft'
+version: '${version}'
+main: 'io.github.kuroka3.spoticraft.SpotiCraftPlugin'
+api-version: '1.20'

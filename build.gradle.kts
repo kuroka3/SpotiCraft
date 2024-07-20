@@ -1,6 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import io.papermc.paperweight.tasks.RemapJar
-import org.gradle.configurationcache.extensions.capitalized
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import java.util.*
 
@@ -13,7 +11,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -26,6 +24,8 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     paperweight.paperDevBundle(libs.versions.paper)
+
+    implementation("com.googlecode.json-simple:json-simple:1.1.1")
 
 //    implementation("io.github.monun:kommand-api:latest.release")
 //    implementation("io.github.monun:tap-api:latest.release")
@@ -47,7 +47,7 @@ extra.apply {
 
     configurations.findByName("implementation")?.allDependencies?.forEach { dependency ->
         val group = dependency.group ?: error("group is null")
-        var name = dependency.name ?: error("name is null")
+        var name = dependency.name
         var version = dependency.version
 
         if (group == "org.jetbrains.kotlin" && version == null) {
