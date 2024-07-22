@@ -26,6 +26,7 @@ dependencies {
     paperweight.paperDevBundle(libs.versions.paper)
 
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
+    implementation("io.javalin:javalin:6.1.3")
 
 //    implementation("io.github.monun:kommand-api:latest.release")
 //    implementation("io.github.monun:tap-api:latest.release")

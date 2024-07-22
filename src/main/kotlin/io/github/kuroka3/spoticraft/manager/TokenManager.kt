@@ -62,7 +62,7 @@ object TokenManager {
                 obj["expires_in"] as Long,
                 refreshToken,
                 obj["scope"] as String,
-                System.currentTimeMillis().toDouble()
+                System.currentTimeMillis()
             )
             return true
         } else {

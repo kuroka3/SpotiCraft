@@ -1,6 +1,7 @@
 package io.github.kuroka3.spoticraft
 
 import io.github.kuroka3.spoticraft.manager.TokenManager
+import io.github.kuroka3.spoticraft.manager.auther.WebAuther
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyManager
 import io.github.kuroka3.spoticraft.manager.utils.JSONFile
 import org.bukkit.Bukkit
@@ -10,6 +11,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
+import org.json.simple.JSONObject
 
 class SpotiCraftPlugin : JavaPlugin() {
 
@@ -24,11 +26,15 @@ class SpotiCraftPlugin : JavaPlugin() {
 
         instance = this
 
-        if(!dataFolder.exists()) { dataFolder.mkdir() }
-        TokenManager.TOKENFILE = JSONFile(dataFolder, "token.json")
+        val tokenFile = JSONFile(dataFolder, "token.json")
+        if (!dataFolder.exists()) { dataFolder.mkdir() }
+        if (!tokenFile.exists()) { tokenFile.saveJSON(JSONObject().apply { this["players"] = JSONObject() }) }
+        TokenManager.TOKENFILE = tokenFile
+
+        WebAuther.run()
     }
 
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (command.name.equals("gettoken", ignoreCase = true) && sender is Player) {
             sender.sendMessage("${TokenManager[sender.uniqueId]?.token}")
             sender.sendMessage("isExpired: ${TokenManager[sender.uniqueId]?.isExpired}")

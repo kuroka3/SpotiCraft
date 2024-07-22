@@ -7,7 +7,7 @@ data class SpotifyToken(val token: String,
                         val expires: Long,
                         val refreshToken: String,
                         val scope: String,
-                        val time: Double) {
+                        val time: Long) {
 
     constructor(obj: JSONObject) : this(
         obj["access_token"] as String,
@@ -15,7 +15,7 @@ data class SpotifyToken(val token: String,
         obj["expires_in"] as Long,
         obj["refresh_token"] as String,
         obj["scope"] as String,
-        obj["time"] as Double
+        obj["time"] as Long
         )
 
     override fun toString(): String {
