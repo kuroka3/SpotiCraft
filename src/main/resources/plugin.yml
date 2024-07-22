@@ -12,3 +12,7 @@ commands:
     usage: /
   pause:
     usage: /
+  getstate:
+    usage: /
+  monitoring:
+    usage: /
