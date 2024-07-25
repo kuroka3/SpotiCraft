@@ -1,9 +1,8 @@
 package io.github.kuroka3.spoticraft.manager.auther
 
-import io.github.kuroka3.spoticraft.SpotiCraftPlugin
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyClient
-import io.github.kuroka3.spoticraft.manager.utils.JSONFile
 import io.github.kuroka3.spoticraft.manager.utils.SettingsManager
+import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import io.javalin.Javalin
 import io.javalin.http.BadRequestResponse
 import io.javalin.http.Context
@@ -13,7 +12,6 @@ import org.json.simple.parser.JSONParser
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URLEncoder
-import java.util.*
 
 object WebAuther {
 
@@ -23,7 +21,7 @@ object WebAuther {
     fun run() {
         app = Javalin.create()
             .get("/") { ctx: Context -> ctx.result("SpotiCraft Auth Server is Running") }
-            .start(8000)
+            .start("0.0.0.0", SettingsManager.serverPort)
 
         app.get("/message") { ctx: Context ->
             ctx.result(ctx.queryParam("p").toString())
@@ -74,13 +72,7 @@ object WebAuther {
                     val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
 
                     val obj = JSONParser().parse(responseBody) as JSONObject
-                    obj["time"] = System.currentTimeMillis()
-
-                    val jFile = JSONFile(SpotiCraftPlugin.instance.dataFolder,"token.json")
-
-                    val beforeObj = jFile.jsonObject
-                    (beforeObj["players"] as JSONObject)[state] = obj
-                    jFile.saveJSON(beforeObj)
+                    TokenManager.setTokenByResponse(obj, state)
                     ctx.result("LOGIN COMPLETE")
                 } else {
                     throw Exception("Unexpected response code: $responseCode ${connection.responseMessage}")

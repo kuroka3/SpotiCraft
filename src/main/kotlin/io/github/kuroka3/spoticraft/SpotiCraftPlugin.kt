@@ -4,7 +4,6 @@ import io.github.kuroka3.spoticraft.manager.NamespacedKeys
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import io.github.kuroka3.spoticraft.manager.auther.WebAuther
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyManager
-import io.github.kuroka3.spoticraft.manager.utils.JSONFile
 import io.github.kuroka3.spoticraft.manager.utils.SettingsManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -14,7 +13,6 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
-import org.json.simple.JSONObject
 
 class SpotiCraftPlugin : JavaPlugin() {
 
@@ -31,7 +29,7 @@ class SpotiCraftPlugin : JavaPlugin() {
         TokenManager.init()
         SettingsManager.load()
 
-        WebAuther.run()
+        Bukkit.getScheduler().runTaskAsynchronously(this, Runnable { WebAuther.run() })
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
@@ -99,7 +97,13 @@ class SpotiCraftPlugin : JavaPlugin() {
                 } else {
                     if (state.isPlaying) {
                         val track = state.track!!
-                        SpotifyManager.notifyTrack(sender, track)
+                        SpotifyManager.nowPlaying(sender, track)
+                        for (i in 0..(SettingsManager.apiRequestDuration/SettingsManager.trackRefreshDuration)) {
+                            Bukkit.getScheduler().runTaskLaterAsynchronously(this, Runnable {
+                                SpotifyManager.updateTrack(sender, SettingsManager.trackRefreshDuration)
+                                SpotifyManager.notifyTrack(sender)
+                            }, i*SettingsManager.trackRefreshDuration)
+                        }
                     } else {
                         sender.sendMessage("notplaying")
 
@@ -109,11 +113,15 @@ class SpotiCraftPlugin : JavaPlugin() {
                         }
                     }
                 }
-            }, 0L, 20L).taskId
+            }, 0L, SettingsManager.apiRequestDuration).taskId
 
             sender.persistentDataContainer.set(NamespacedKeys.MONITOR_TASK_KEY, PersistentDataType.INTEGER, taskid)
             return true
         }
         return super.onCommand(sender, command, label, args)
+    }
+
+    override fun onDisable() {
+        WebAuther.stop()
     }
 }

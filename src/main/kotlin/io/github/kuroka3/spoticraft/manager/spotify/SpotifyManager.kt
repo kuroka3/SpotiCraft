@@ -1,5 +1,7 @@
 package io.github.kuroka3.spoticraft.manager.spotify
 
+import io.github.kuroka3.spoticraft.manager.NamespacedKeys
+import io.github.kuroka3.spoticraft.manager.pdc.TrackDataType
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
@@ -8,6 +10,7 @@ import org.json.simple.parser.JSONParser
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.UUID
+import kotlin.math.roundToInt
 
 object SpotifyManager {
 
@@ -92,6 +95,14 @@ object SpotifyManager {
         }
     }
 
+    fun notifyTrack(target: Player) {
+        val container = target.persistentDataContainer
+        if (container.has(NamespacedKeys.CURRENT_TRACK_KEY)) {
+            val track = container.get(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType())!!
+            notifyTrack(target, track)
+        }
+    }
+
     fun notifyTrack(target: Player, track: SpotifyTrack) {
         val currentms = formatMilliseconds(track.currentms)
         val duration = formatMilliseconds(track.length)
@@ -100,8 +111,27 @@ object SpotifyManager {
         target.sendActionBar(Component.text("$currentms $progressBar $duration"))
     }
 
-    fun updateTrack(target: Player, track: SpotifyTrack) {
+    fun updateTrack(target: Player, duration: Long) {
+        val container = target.persistentDataContainer
+        if (container.has(NamespacedKeys.CURRENT_TRACK_KEY)) {
+            val track = container.get(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType())!!
+            val updated = SpotifyTrack(track.id, track.name, track.artist, track.length, track.currentms + duration*50L)
+            if (updated.currentms <= updated.length) {
+                container.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), updated)
+            }
+        }
+    }
 
+    fun nowPlaying(target: Player, track: SpotifyTrack) {
+        val container = target.persistentDataContainer
+        if (container.has(NamespacedKeys.CURRENT_TRACK_KEY)) {
+            val before = container.get(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType())!!
+            if (before.id != track.id) {
+                target.sendMessage(Component.text("♫ Now Playing: ").append(Component.text("${track.name} - ${track.artist}")))
+                target.persistentDataContainer.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), track)
+            }
+        }
+        target.persistentDataContainer.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), track)
     }
 
     private fun formatMilliseconds(milliseconds: Long): String {
@@ -112,8 +142,8 @@ object SpotifyManager {
     }
 
     private fun getProgressBar(progress: Float): String {
-        val totalLength = 40 // 진행바의 총 길이
-        val filledLength = (progress * totalLength).toInt() // 채워진 부분의 길이
+        val totalLength = 30 // 진행바의 총 길이
+        val filledLength = (progress * totalLength).roundToInt() // 채워진 부분의 길이
         val emptyLength = totalLength - filledLength // 비어있는 부분의 길이
 
         val filledBar = "█".repeat(filledLength)

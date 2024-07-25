@@ -5,7 +5,6 @@ import io.github.kuroka3.spoticraft.manager.spotify.SpotifyClient
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyToken
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
-import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
@@ -35,6 +34,16 @@ object TokenManager {
         players[key] = token.toJSON()
         obj["players"] = players
         TOKENFILE.saveJSON(obj)
+    }
+
+    fun setTokenByResponse(obj: JSONObject, target: String) {
+        obj["time"] = System.currentTimeMillis()
+
+        val jFile = TOKENFILE
+
+        val beforeObj = jFile.jsonObject
+        (beforeObj["players"] as JSONObject)[target] = obj
+        jFile.saveJSON(beforeObj)
     }
 
     fun requestTokenURL(uuid: UUID): URL {
