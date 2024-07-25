@@ -1,6 +1,6 @@
 package io.github.kuroka3.spoticraft.manager.spotify
 
-import io.github.kuroka3.spoticraft.manager.TokenManager
+import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.json.simple.JSONObject
@@ -93,13 +93,15 @@ object SpotifyManager {
     }
 
     fun notifyTrack(target: Player, track: SpotifyTrack) {
-        val title = track.name
-        val artist = track.artist
         val currentms = formatMilliseconds(track.currentms)
         val duration = formatMilliseconds(track.length)
         val progressBar = getProgressBar(track.currentms.toFloat()/track.length.toFloat())
 
-        target.sendActionBar(Component.text("$title $currentms $progressBar $duration $artist"))
+        target.sendActionBar(Component.text("$currentms $progressBar $duration"))
+    }
+
+    fun updateTrack(target: Player, track: SpotifyTrack) {
+
     }
 
     private fun formatMilliseconds(milliseconds: Long): String {
@@ -110,13 +112,13 @@ object SpotifyManager {
     }
 
     private fun getProgressBar(progress: Float): String {
-        val totalLength = 20 // 진행바의 총 길이
+        val totalLength = 40 // 진행바의 총 길이
         val filledLength = (progress * totalLength).toInt() // 채워진 부분의 길이
         val emptyLength = totalLength - filledLength // 비어있는 부분의 길이
 
-        val filledBar = "=".repeat(filledLength)
-        val emptyBar = if (emptyLength > 0) "-".repeat(emptyLength - 1) else ""
-        val progressBar = "${filledBar}O$emptyBar"
+        val filledBar = "█".repeat(filledLength)
+        val emptyBar = "░".repeat(emptyLength)
+        val progressBar = "${filledBar}$emptyBar"
 
         return progressBar
     }

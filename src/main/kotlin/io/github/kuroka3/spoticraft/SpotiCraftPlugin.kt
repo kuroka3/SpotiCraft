@@ -1,11 +1,14 @@
 package io.github.kuroka3.spoticraft
 
-import io.github.kuroka3.spoticraft.manager.TokenManager
+import io.github.kuroka3.spoticraft.manager.NamespacedKeys
+import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import io.github.kuroka3.spoticraft.manager.auther.WebAuther
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyManager
 import io.github.kuroka3.spoticraft.manager.utils.JSONFile
+import io.github.kuroka3.spoticraft.manager.utils.SettingsManager
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
-import org.bukkit.NamespacedKey
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -19,17 +22,14 @@ class SpotiCraftPlugin : JavaPlugin() {
         lateinit var instance: SpotiCraftPlugin
     }
 
-    val testkey = NamespacedKey(this, "monitortask")
-
     override fun onEnable() {
         logger.info("SpotiCraft!")
 
         instance = this
 
-        val tokenFile = JSONFile(dataFolder, "token.json")
         if (!dataFolder.exists()) { dataFolder.mkdir() }
-        if (!tokenFile.exists()) { tokenFile.saveJSON(JSONObject().apply { this["players"] = JSONObject() }) }
-        TokenManager.TOKENFILE = tokenFile
+        TokenManager.init()
+        SettingsManager.load()
 
         WebAuther.run()
     }
@@ -42,7 +42,8 @@ class SpotiCraftPlugin : JavaPlugin() {
         } else if (command.name.equals("refreshtoken", ignoreCase = true) && sender is Player) {
             Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
                 if(!TokenManager.refreshToken(sender.uniqueId)) {
-                    sender.sendMessage("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}")
+                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
+                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
                 }
                 sender.sendMessage("${TokenManager[sender.uniqueId]?.token}")
                 sender.sendMessage("isExpired: ${TokenManager[sender.uniqueId]?.isExpired}")
@@ -51,7 +52,8 @@ class SpotiCraftPlugin : JavaPlugin() {
         } else if (command.name.equals("skip", ignoreCase = true) && sender is Player) {
             Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
                 if(!SpotifyManager.request(SpotifyManager.Requests.NEXT, sender.uniqueId)) {
-                    sender.sendMessage("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}")
+                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
+                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
                 }
                 sender.sendMessage("Skipped")
             })
@@ -59,7 +61,8 @@ class SpotiCraftPlugin : JavaPlugin() {
         } else if (command.name.equals("pause", ignoreCase = true) && sender is Player) {
             Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
                 if(!SpotifyManager.request(SpotifyManager.Requests.PAUSE, sender.uniqueId)) {
-                    sender.sendMessage("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}")
+                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
+                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
                 }
                 sender.sendMessage("Paused")
             })
@@ -68,7 +71,8 @@ class SpotiCraftPlugin : JavaPlugin() {
             Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
                 val state = SpotifyManager.getState(sender.uniqueId)
                 if (state == null) {
-                    sender.sendMessage("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}")
+                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
+                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
                 } else {
                     if (state.isPlaying) {
                         val track = state.track!!
@@ -84,11 +88,12 @@ class SpotiCraftPlugin : JavaPlugin() {
             val taskid = Bukkit.getScheduler().runTaskTimerAsynchronously(this, Runnable {
                 val state = SpotifyManager.getState(sender.uniqueId)
                 if (state == null) {
-                    sender.sendMessage("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}")
+                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
+                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
 
                     val container = sender.persistentDataContainer
-                    if (container.has(testkey)) {
-                        Bukkit.getScheduler().cancelTask(container.get(testkey, PersistentDataType.INTEGER)!!)
+                    if (container.has(NamespacedKeys.MONITOR_TASK_KEY)) {
+                        Bukkit.getScheduler().cancelTask(container.get(NamespacedKeys.MONITOR_TASK_KEY, PersistentDataType.INTEGER)!!)
                     }
 
                 } else {
@@ -99,14 +104,14 @@ class SpotiCraftPlugin : JavaPlugin() {
                         sender.sendMessage("notplaying")
 
                         val container = sender.persistentDataContainer
-                        if (container.has(testkey)) {
-                            Bukkit.getScheduler().cancelTask(container.get(testkey, PersistentDataType.INTEGER)!!)
+                        if (container.has(NamespacedKeys.MONITOR_TASK_KEY)) {
+                            Bukkit.getScheduler().cancelTask(container.get(NamespacedKeys.MONITOR_TASK_KEY, PersistentDataType.INTEGER)!!)
                         }
                     }
                 }
             }, 0L, 20L).taskId
 
-            sender.persistentDataContainer.set(testkey, PersistentDataType.INTEGER, taskid)
+            sender.persistentDataContainer.set(NamespacedKeys.MONITOR_TASK_KEY, PersistentDataType.INTEGER, taskid)
             return true
         }
         return super.onCommand(sender, command, label, args)

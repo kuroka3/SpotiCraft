@@ -1,17 +1,23 @@
-package io.github.kuroka3.spoticraft.manager
+package io.github.kuroka3.spoticraft.manager.utils
 
+import io.github.kuroka3.spoticraft.SpotiCraftPlugin
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyClient
 import io.github.kuroka3.spoticraft.manager.spotify.SpotifyToken
-import io.github.kuroka3.spoticraft.manager.utils.JSONFile
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 import java.util.*
 
 object TokenManager {
-    lateinit var TOKENFILE: JSONFile
+    private lateinit var TOKENFILE: JSONFile
+
+    fun init() {
+        TOKENFILE = JSONFile(SpotiCraftPlugin.instance.dataFolder, "spotify.token")
+        if (!TOKENFILE.exists()) { TOKENFILE.saveJSON(JSONObject().apply { this["players"] = JSONObject() }) }
+    }
 
     operator fun get(uuid: UUID): SpotifyToken? {
         val key = uuid.toString().replace("-", "")
@@ -33,7 +39,7 @@ object TokenManager {
 
     fun requestTokenURL(uuid: UUID): URL {
         val key = uuid.toString().replace("-", "")
-        return URI("${ConstVariables.SERVER_DOMAIN}:8000/login?uuid=$key").toURL()
+        return URI("${SettingsManager.serverDomain}:${SettingsManager.serverPort}/login?uuid=$key").toURL()
     }
 
     /**

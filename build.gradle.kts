@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.paperweight)
     alias(libs.plugins.shadow)
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 java {
@@ -27,6 +28,7 @@ dependencies {
 
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("io.javalin:javalin:6.1.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
 
 //    implementation("io.github.monun:kommand-api:latest.release")
 //    implementation("io.github.monun:tap-api:latest.release")
