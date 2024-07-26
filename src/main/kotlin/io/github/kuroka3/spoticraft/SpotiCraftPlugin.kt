@@ -110,7 +110,7 @@ class SpotiCraftPlugin : JavaPlugin() {
                         SpotifyManager.nowPlaying(sender, track)
                         for (i in 0..(SettingsManager.apiRequestDuration/SettingsManager.trackRefreshDuration)) {
                             Bukkit.getScheduler().runTaskLaterAsynchronously(this, Runnable {
-                                SpotifyManager.updateTrack(sender, SettingsManager.trackRefreshDuration)
+                                SpotifyManager.updateTrack(sender)
                                 SpotifyManager.notifyTrack(sender)
                             }, i*SettingsManager.trackRefreshDuration)
                         }

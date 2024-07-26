@@ -10,6 +10,7 @@ class SpotifyTrack {
     val artist: String
     val length: Long
     val currentms: Long
+    val lastUpdate: Long
 
     constructor(id: String, name: String, artist: String, length: Long, currentms: Long) {
         this.id = id
@@ -17,6 +18,8 @@ class SpotifyTrack {
         this.artist = artist
         this.length = length
         this.currentms = currentms
+
+        this.lastUpdate = System.currentTimeMillis()
     }
 
     constructor(obj: JSONObject) {
@@ -27,5 +30,7 @@ class SpotifyTrack {
         this.artist = (item["artists"] as JSONArray).map { it as JSONObject }.joinToString(", ") { it["name"] as String }
         this.length = item["duration_ms"] as Long
         this.currentms = obj["progress_ms"] as Long
+
+        this.lastUpdate = System.currentTimeMillis()
     }
 }

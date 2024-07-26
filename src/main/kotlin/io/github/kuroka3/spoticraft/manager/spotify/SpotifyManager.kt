@@ -115,11 +115,11 @@ object SpotifyManager {
         target.sendActionBar(Component.text("$currentms $progressBar $duration"))
     }
 
-    fun updateTrack(target: Player, duration: Long) {
+    fun updateTrack(target: Player) {
         val container = target.persistentDataContainer
         if (container.has(NamespacedKeys.CURRENT_TRACK_KEY)) {
             val track = container.get(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType())!!
-            val updated = SpotifyTrack(track.id, track.name, track.artist, track.length, track.currentms + duration*50L)
+            val updated = SpotifyTrack(track.id, track.name, track.artist, track.length, track.currentms+(System.currentTimeMillis()-track.lastUpdate))
             if (updated.currentms <= updated.length) {
                 container.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), updated)
             }
