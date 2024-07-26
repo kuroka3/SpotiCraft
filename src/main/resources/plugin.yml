@@ -7,14 +7,13 @@ commands:
   spoticraft:
     description: Default command for SpotiCraft plugin
     usage: /spoticraft (reload)
+  spotify:
+    description: Manage Spotify
+    usage: /spotify [start/pause/next/prev/set_repeat/set_volume/toggle_shuffle/seek_to_position] (value)
 
   gettoken:
     usage: /
   refreshtoken:
-    usage: /
-  skip:
-    usage: /
-  pause:
     usage: /
   getstate:
     usage: /

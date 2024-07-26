@@ -1,6 +1,7 @@
 package io.github.kuroka3.spoticraft
 
 import io.github.kuroka3.spoticraft.commands.SpoticraftCommand
+import io.github.kuroka3.spoticraft.commands.SpotifyCommand
 import io.github.kuroka3.spoticraft.manager.NamespacedKeys
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import io.github.kuroka3.spoticraft.manager.auther.WebAuther
@@ -40,6 +41,10 @@ class SpotiCraftPlugin : JavaPlugin() {
             this.setExecutor(SpoticraftCommand())
             this.tabCompleter = SpoticraftCommand()
         }
+        getCommand("spotify")!!.run {
+            this.setExecutor(SpotifyCommand())
+            this.tabCompleter = SpotifyCommand()
+        }
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
@@ -55,24 +60,6 @@ class SpotiCraftPlugin : JavaPlugin() {
                 }
                 sender.sendMessage("${TokenManager[sender.uniqueId]?.token}")
                 sender.sendMessage("isExpired: ${TokenManager[sender.uniqueId]?.isExpired}")
-            })
-            return true
-        } else if (command.name.equals("skip", ignoreCase = true) && sender is Player) {
-            Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
-                if(!SpotifyManager.request(SpotifyManager.Requests.NEXT, sender.uniqueId)) {
-                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
-                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
-                }
-                sender.sendMessage("Skipped")
-            })
-            return true
-        } else if (command.name.equals("pause", ignoreCase = true) && sender is Player) {
-            Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
-                if(!SpotifyManager.request(SpotifyManager.Requests.PAUSE, sender.uniqueId)) {
-                    sender.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(sender.uniqueId)}").clickEvent(
-                        ClickEvent.openUrl(TokenManager.requestTokenURL(sender.uniqueId))))
-                }
-                sender.sendMessage("Paused")
             })
             return true
         } else if (command.name.equals("getstate", ignoreCase = true) && sender is Player) {

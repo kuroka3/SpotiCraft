@@ -4,6 +4,7 @@ import io.github.kuroka3.spoticraft.manager.NamespacedKeys
 import io.github.kuroka3.spoticraft.manager.pdc.TrackDataType
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.entity.Player
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
@@ -23,7 +24,15 @@ object SpotifyManager {
         PREV,
         SET_REPEAT,
         SET_VOLUME,
-        TOGGLE_SHUFFLE
+        TOGGLE_SHUFFLE,
+        SEEK_TO_POSITION
+    }
+
+    enum class Responses {
+        NEED_LOGIN,
+        OK,
+        DENIED,
+        TOO_MANY
     }
 
     private val urls: Map<Requests, String> = mapOf(
@@ -33,7 +42,8 @@ object SpotifyManager {
         Pair(Requests.PREV, "/previous"),
         Pair(Requests.SET_REPEAT, "/repeat"),
         Pair(Requests.SET_VOLUME, "/volume"),
-        Pair(Requests.TOGGLE_SHUFFLE, "/shuffle")
+        Pair(Requests.TOGGLE_SHUFFLE, "/shuffle"),
+        Pair(Requests.SEEK_TO_POSITION, "/seek")
     )
 
     private val methods: Map<Requests, String> = mapOf(
@@ -43,20 +53,21 @@ object SpotifyManager {
         Pair(Requests.PREV, "POST"),
         Pair(Requests.SET_REPEAT, "PUT"),
         Pair(Requests.SET_VOLUME, "PUT"),
-        Pair(Requests.TOGGLE_SHUFFLE, "PUT")
+        Pair(Requests.TOGGLE_SHUFFLE, "PUT"),
+        Pair(Requests.SEEK_TO_POSITION, "PUT")
     )
 
     /**
      * Need to run with async (BukkitScheduler)
      */
-    fun request(type: Requests, target: UUID): Boolean {
-        var token = TokenManager[target] ?: return false
+    fun request(type: Requests, target: UUID, params: String = ""): Responses {
+        var token = TokenManager[target] ?: return Responses.NEED_LOGIN
         if (token.isExpired) {
             TokenManager.refreshToken(target)
-            token = TokenManager[target] ?: return false
+            token = TokenManager[target] ?: return Responses.NEED_LOGIN
         }
 
-        val url = URI("$SPOTIFY_URL${urls[type]}").toURL()
+        val url = URI("$SPOTIFY_URL${urls[type]}?$params").toURL()
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = methods[type]
         connection.setRequestProperty("Authorization", token.toString())
@@ -64,7 +75,7 @@ object SpotifyManager {
         connection.outputStream.use { it.write(ByteArray(0)) }
 
         val responseCode = connection.responseCode
-        return responseCode == HttpURLConnection.HTTP_NO_CONTENT || responseCode == HttpURLConnection.HTTP_OK
+        return if (responseCode == HttpURLConnection.HTTP_NO_CONTENT || responseCode == HttpURLConnection.HTTP_OK) Responses.OK else if (responseCode == 429) Responses.TOO_MANY else Responses.DENIED
     }
 
     /**
@@ -136,6 +147,11 @@ object SpotifyManager {
             }
         }
         target.persistentDataContainer.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), track)
+    }
+
+    fun pleaseLogin(target: Player) {
+        target.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(target.uniqueId)}").clickEvent(
+            ClickEvent.openUrl(TokenManager.requestTokenURL(target.uniqueId))))
     }
 
     private fun formatMilliseconds(milliseconds: Long): String {
