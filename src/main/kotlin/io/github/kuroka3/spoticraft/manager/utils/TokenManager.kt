@@ -87,4 +87,8 @@ object TokenManager {
             return false
         }
     }
+
+    fun clear() {
+        active_tokens.clear()
+    }
 }

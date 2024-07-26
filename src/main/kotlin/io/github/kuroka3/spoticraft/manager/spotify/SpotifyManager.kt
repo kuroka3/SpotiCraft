@@ -83,15 +83,19 @@ object SpotifyManager {
         connection.setRequestProperty("Authorization", token.toString())
 
         val responseCode = connection.responseCode
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
-            val obj = JSONParser().parse(responseBody) as JSONObject
+        when (responseCode) {
+            HttpURLConnection.HTTP_OK -> {
+                val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
+                val obj = JSONParser().parse(responseBody) as JSONObject
 
-            return SpotifyState(obj)
-        } else if (responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
-            return SpotifyState(false)
-        } else {
-            return null
+                return SpotifyState(obj)
+            }
+            HttpURLConnection.HTTP_NO_CONTENT -> {
+                return SpotifyState(false)
+            }
+            else -> {
+                return null
+            }
         }
     }
 
@@ -142,12 +146,12 @@ object SpotifyManager {
     }
 
     private fun getProgressBar(progress: Float): String {
-        val totalLength = 30 // 진행바의 총 길이
+        val totalLength = 60 // 진행바의 총 길이
         val filledLength = (progress * totalLength).roundToInt() // 채워진 부분의 길이
         val emptyLength = totalLength - filledLength // 비어있는 부분의 길이
 
-        val filledBar = "█".repeat(filledLength)
-        val emptyBar = "░".repeat(emptyLength)
+        val filledBar = "⣿".repeat(filledLength)
+        val emptyBar = "⣀".repeat(emptyLength)
         val progressBar = "${filledBar}$emptyBar"
 
         return progressBar

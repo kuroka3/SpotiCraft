@@ -1,5 +1,6 @@
 package io.github.kuroka3.spoticraft
 
+import io.github.kuroka3.spoticraft.commands.SpoticraftCommand
 import io.github.kuroka3.spoticraft.manager.NamespacedKeys
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
 import io.github.kuroka3.spoticraft.manager.auther.WebAuther
@@ -21,7 +22,7 @@ class SpotiCraftPlugin : JavaPlugin() {
     }
 
     override fun onEnable() {
-        logger.info("SpotiCraft!")
+        logger.info("SpotiCraft v${pluginMeta.version} enabled")
 
         instance = this
 
@@ -30,6 +31,15 @@ class SpotiCraftPlugin : JavaPlugin() {
         SettingsManager.load()
 
         Bukkit.getScheduler().runTaskAsynchronously(this, Runnable { WebAuther.run() })
+
+        registerCommands()
+    }
+
+    private fun registerCommands() {
+        getCommand("spoticraft")!!.run {
+            this.setExecutor(SpoticraftCommand())
+            this.tabCompleter = SpoticraftCommand()
+        }
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {

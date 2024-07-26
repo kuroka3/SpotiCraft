@@ -4,6 +4,10 @@ main: 'io.github.kuroka3.spoticraft.SpotiCraftPlugin'
 api-version: '1.21'
 
 commands:
+  spoticraft:
+    description: Default command for SpotiCraft plugin
+    usage: /spoticraft (reload)
+
   gettoken:
     usage: /
   refreshtoken:
