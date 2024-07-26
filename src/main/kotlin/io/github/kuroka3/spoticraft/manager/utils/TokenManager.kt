@@ -12,6 +12,7 @@ import java.util.*
 
 object TokenManager {
     private lateinit var TOKENFILE: JSONFile
+    private val active_tokens: MutableMap<UUID, String> = mutableMapOf()
 
     fun init() {
         TOKENFILE = JSONFile(SpotiCraftPlugin.instance.dataFolder, "spotify.token")
@@ -19,24 +20,26 @@ object TokenManager {
     }
 
     operator fun get(uuid: UUID): SpotifyToken? {
-        val key = uuid.toString().replace("-", "")
         val obj = TOKENFILE.jsonObject["players"] as JSONObject
-        if (!obj.containsKey(key)) { return null }
+        if (!obj.containsKey(uuid.toString())) { return null }
 
-        val user = obj[key] as JSONObject
-        return SpotifyToken(user)
+        val user = obj[uuid.toString()] as JSONObject
+        return SpotifyToken(active_tokens[uuid] ?: "need_refresh", user)
     }
 
     operator fun set(uuid: UUID, token: SpotifyToken) {
-        val key = uuid.toString().replace("-", "")
         val obj = TOKENFILE.jsonObject
         val players = obj["players"] as JSONObject
-        players[key] = token.toJSON()
+        players[uuid.toString()] = token.toJSON()
         obj["players"] = players
         TOKENFILE.saveJSON(obj)
+        active_tokens[uuid] = token.token
     }
 
     fun setTokenByResponse(obj: JSONObject, target: String) {
+        active_tokens[UUID.fromString(target)] = obj["access_token"] as String
+        obj.remove("access_token")
+
         obj["time"] = System.currentTimeMillis()
 
         val jFile = TOKENFILE
@@ -44,11 +47,11 @@ object TokenManager {
         val beforeObj = jFile.jsonObject
         (beforeObj["players"] as JSONObject)[target] = obj
         jFile.saveJSON(beforeObj)
+
     }
 
     fun requestTokenURL(uuid: UUID): URL {
-        val key = uuid.toString().replace("-", "")
-        return URI("${SettingsManager.serverDomain}:${SettingsManager.serverPort}/login?uuid=$key").toURL()
+        return URI("${SettingsManager.serverDomain}:${SettingsManager.serverPort}/login?uuid=$uuid").toURL()
     }
 
     /**

@@ -9,8 +9,8 @@ data class SpotifyToken(val token: String,
                         val scope: String,
                         val time: Long) {
 
-    constructor(obj: JSONObject) : this(
-        obj["access_token"] as String,
+    constructor(activeToken: String, obj: JSONObject) : this(
+        activeToken,
         obj["token_type"] as String,
         obj["expires_in"] as Long,
         obj["refresh_token"] as String,
@@ -24,7 +24,6 @@ data class SpotifyToken(val token: String,
 
     fun toJSON(): JSONObject {
         return JSONObject().apply {
-            this["access_token"] = token
             this["token_type"] = type
             this["expires_in"] = expires
             this["refresh_token"] = refreshToken
@@ -34,5 +33,5 @@ data class SpotifyToken(val token: String,
     }
 
     val isExpired: Boolean
-        get() = System.currentTimeMillis() > time + (expires * 1000)
+        get() = System.currentTimeMillis() > time + (expires * 1000) || this.token == "need_refresh"
 }
