@@ -1,17 +1,22 @@
 package io.github.kuroka3.spoticraft.manager.spotify
 
+import io.github.kuroka3.spoticraft.SpotiCraftPlugin
 import io.github.kuroka3.spoticraft.manager.NamespacedKeys
 import io.github.kuroka3.spoticraft.manager.pdc.TrackDataType
+import io.github.kuroka3.spoticraft.manager.utils.SettingsManager
 import io.github.kuroka3.spoticraft.manager.utils.TokenManager
+import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.event.ClickEvent
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.persistence.PersistentDataType
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.UUID
-import kotlin.math.roundToInt
 
 object SpotifyManager {
 
@@ -121,9 +126,16 @@ object SpotifyManager {
     fun notifyTrack(target: Player, track: SpotifyTrack) {
         val currentms = formatMilliseconds(track.currentms)
         val duration = formatMilliseconds(track.length)
-        val progressBar = getProgressBar(track.currentms.toFloat()/track.length.toFloat())
 
-        target.sendActionBar(Component.text("$currentms $progressBar $duration"))
+        val notifyingBossBar = target.activeBossBars().filter { Regex(""".* - .* \[ .*? / .*? ]""").containsMatchIn((it.name() as TextComponent).content()) }
+
+        if (notifyingBossBar.isNotEmpty()) {
+            val element = notifyingBossBar[0]
+            element.name(Component.text("${track.name} - ${track.artist} [ $currentms / $duration ]"))
+            element.progress(track.currentms.toFloat()/track.length.toFloat())
+        } else {
+            target.showBossBar(BossBar.bossBar(Component.text("${track.name} - ${track.artist} [ $currentms / $duration ]"), track.currentms.toFloat()/track.length.toFloat(), BossBar.Color.GREEN, BossBar.Overlay.PROGRESS))
+        }
     }
 
     fun updateTrack(target: Player) {
@@ -149,6 +161,43 @@ object SpotifyManager {
         target.persistentDataContainer.set(NamespacedKeys.CURRENT_TRACK_KEY, TrackDataType(), track)
     }
 
+    fun showPlayingState(target: Player) {
+        val taskid = Bukkit.getScheduler().runTaskTimerAsynchronously(SpotiCraftPlugin.instance, Runnable {
+            val state = getState(target.uniqueId)
+            if (state == null) {
+                pleaseLogin(target)
+
+                val container = target.persistentDataContainer
+                if (container.has(NamespacedKeys.SHOW_PLAYING_STATE_TASK_KEY)) {
+                    Bukkit.getScheduler().cancelTask(container.get(NamespacedKeys.SHOW_PLAYING_STATE_TASK_KEY, PersistentDataType.INTEGER)!!)
+                }
+            } else if (state.isPlaying) {
+                val track = state.track!!
+                nowPlaying(target, track)
+                for (i in 0..(SettingsManager.apiRequestDuration/SettingsManager.trackRefreshDuration)) {
+                    Bukkit.getScheduler().runTaskLaterAsynchronously(SpotiCraftPlugin.instance, Runnable {
+                        updateTrack(target)
+                        notifyTrack(target)
+                    }, i*SettingsManager.trackRefreshDuration)
+                }
+            }
+        }, 0L, SettingsManager.apiRequestDuration).taskId
+        target.persistentDataContainer.set(NamespacedKeys.SHOW_PLAYING_STATE_TASK_KEY, PersistentDataType.INTEGER, taskid)
+    }
+
+    fun stopShowPlayingState(target: Player) {
+        val container = target.persistentDataContainer
+        if (container.has(NamespacedKeys.SHOW_PLAYING_STATE_TASK_KEY)) {
+            Bukkit.getScheduler().cancelTask(container.get(NamespacedKeys.SHOW_PLAYING_STATE_TASK_KEY, PersistentDataType.INTEGER)!!)
+            val notifyingBossBar = target.activeBossBars().filter { Regex(""".* - .* \[ .*? / .*? ]""").containsMatchIn((it.name() as TextComponent).content()) }
+            if (notifyingBossBar.isNotEmpty()) {
+                Bukkit.getScheduler().runTaskLaterAsynchronously(SpotiCraftPlugin.instance, Runnable {
+                    notifyingBossBar.forEach { target.hideBossBar(it) }
+                }, SettingsManager.apiRequestDuration)
+            }
+        }
+    }
+
     fun pleaseLogin(target: Player) {
         target.sendMessage(Component.text("Go Login: ${TokenManager.requestTokenURL(target.uniqueId)}").clickEvent(
             ClickEvent.openUrl(TokenManager.requestTokenURL(target.uniqueId))))
@@ -159,17 +208,5 @@ object SpotifyManager {
         val minutes = seconds / 60
         val remainingSeconds = seconds % 60
         return String.format("%02d:%02d", minutes, remainingSeconds)
-    }
-
-    private fun getProgressBar(progress: Float): String {
-        val totalLength = 60 // 진행바의 총 길이
-        val filledLength = (progress * totalLength).roundToInt() // 채워진 부분의 길이
-        val emptyLength = totalLength - filledLength // 비어있는 부분의 길이
-
-        val filledBar = "⣿".repeat(filledLength)
-        val emptyBar = "⣀".repeat(emptyLength)
-        val progressBar = "${filledBar}$emptyBar"
-
-        return progressBar
     }
 }

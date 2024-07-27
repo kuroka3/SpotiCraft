@@ -15,6 +15,7 @@ class SpotifyCommand : CommandExecutor, TabCompleter {
         Pair("position", SeekToPositionCommand()),
         Pair("repeat", SetRepeatCommand()),
         Pair("volume", SetVolumeCommand()),
+        Pair("playing_state", ShowPlayingStateCommand()),
         Pair("start", StartCommand()),
         Pair("shuffle", ToggleShuffleCommand())
     )

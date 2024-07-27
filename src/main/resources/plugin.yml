@@ -17,5 +17,3 @@ commands:
     usage: /
   getstate:
     usage: /
-  monitoring:
-    usage: /
